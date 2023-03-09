@@ -1,8 +1,8 @@
 // see SignupForm.js for comments
 import React, { useState } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
-
-import { loginUser } from '../utils/API';
+import { useMutation } from '@apollo/react-hooks';
+import { LOGIN_MUTATION } from '../utils/mutations';
 import Auth from '../utils/auth';
 
 const LoginForm = () => {
@@ -15,6 +15,8 @@ const LoginForm = () => {
     setUserFormData({ ...userFormData, [name]: value });
   };
 
+  const [ loginUser, {error} ] = useMutation(LOGIN_MUTATION);
+
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
@@ -26,15 +28,11 @@ const LoginForm = () => {
     }
 
     try {
-      const response = await loginUser(userFormData);
+      const { data } = await loginUser({
+        variables: {...userFormData}
+      });
 
-      if (!response.ok) {
-        throw new Error('something went wrong!');
-      }
-
-      const { token, user } = await response.json();
-      console.log(user);
-      Auth.login(token);
+      Auth.login(data.login.token);
     } catch (err) {
       console.error(err);
       setShowAlert(true);
