@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
-import { Form, Button, Alert } from 'react-bootstrap';
-import { ADD_USER_MUTATION } from '../utils/mutations';
-import Auth from '../utils/auth';
-import { useMutation } from '@apollo/client';
+import React, { useState } from "react";
+import { Form, Button, Alert } from "react-bootstrap";
+import Auth from "../utils/auth";
+import { useMutation } from "@apollo/react-hooks";
+import { ADD_USER_MUTATION } from "../utils/mutations";
 
 const SignupForm = () => {
-  const [userFormData, setUserFormData] = useState({ 
-    username: '',
-    email: '',
-    password: ''
+  const [userFormData, setUserFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
   });
+  const [validated, setValidated] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
 
-  const [addUser, { error, data }] = useMutation(ADD_USER_MUTATION);
+  const [addUser, { error }] = useMutation(ADD_USER_MUTATION);
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -23,42 +25,50 @@ const SignupForm = () => {
 
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
+      event.preventDefault();
       event.stopPropagation();
-    } else {
-      try {
-        const { data } = await addUser({
-          variables: { ...userFormData }
-        });
-        Auth.login(data.addUser.token);
-      } catch (err) {
-        console.error(err);
-      }
+    }
+
+    setValidated(true);
+
+    try {
+      const { data } = await addUser({
+        variables: { ...userFormData },
+      });
+
+      Auth.login(data.addUser.token);
+    } catch (e) {
+      console.error(e);
+      setShowAlert(true);
     }
 
     setUserFormData({
-      username: '',
-      email: '',
-      password: ''
+      username: "",
+      email: "",
+      password: "",
     });
   };
 
   return (
     <>
-      <Form noValidate onSubmit={handleFormSubmit}>
-        {error && (
-          <Alert variant="danger">
-            {error?.message || "Something went wrong with your signup!"}
-          </Alert>
-        )}
+      <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
+        <Alert
+          dismissible
+          onClose={() => setShowAlert(false)}
+          show={showAlert}
+          variant="danger"
+        >
+          Something went wrong with your signup!
+        </Alert>
 
-        <Form.Group className="mb-3">
+        <Form.Group>
           <Form.Label htmlFor="username">Username</Form.Label>
           <Form.Control
             type="text"
             placeholder="Your username"
             name="username"
-            value={userFormData.username}
             onChange={handleInputChange}
+            value={userFormData.username}
             required
           />
           <Form.Control.Feedback type="invalid">
@@ -66,14 +76,14 @@ const SignupForm = () => {
           </Form.Control.Feedback>
         </Form.Group>
 
-        <Form.Group className="mb-3">
+        <Form.Group>
           <Form.Label htmlFor="email">Email</Form.Label>
           <Form.Control
             type="email"
             placeholder="Your email address"
             name="email"
-            value={userFormData.email}
             onChange={handleInputChange}
+            value={userFormData.email}
             required
           />
           <Form.Control.Feedback type="invalid">
@@ -81,14 +91,14 @@ const SignupForm = () => {
           </Form.Control.Feedback>
         </Form.Group>
 
-        <Form.Group className="mb-3">
+        <Form.Group>
           <Form.Label htmlFor="password">Password</Form.Label>
           <Form.Control
             type="password"
             placeholder="Your password"
             name="password"
-            value={userFormData.password}
             onChange={handleInputChange}
+            value={userFormData.password}
             required
           />
           <Form.Control.Feedback type="invalid">
@@ -97,12 +107,20 @@ const SignupForm = () => {
         </Form.Group>
 
         <Button
-          variant="success"
+          disabled={
+            !(
+              userFormData.username &&
+              userFormData.email &&
+              userFormData.password
+            )
+          }
           type="submit"
-          disabled={!userFormData.username || !userFormData.email || !userFormData.password}
+          variant="success"
         >
           Submit
         </Button>
+
+        {error && <div>Sign up failed</div>}
       </Form>
     </>
   );
