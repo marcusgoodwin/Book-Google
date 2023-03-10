@@ -44,29 +44,42 @@ export const LOGIN_MUTATION = gql`
 `;
 
 export const SAVE_BOOK_MUTATION = gql`
-  mutation SaveBook($book: BookInput!) {
-    saveBook(book: $book) {
+  mutation Mutation(
+    $authors: [String]!
+    $description: String
+    $title: String!
+    $bookId: String!
+    $image: String
+    $link: String
+  ) {
+    saveBook(
+      authors: $authors
+      description: $description
+      title: $title
+      bookId: $bookId
+      image: $image
+      link: $link
+    ) {
       _id
-      username
-      email
-      bookCount
       savedBooks {
-        ${bookFields}
+        title
+        description
       }
     }
   }
 `;
 
 export const REMOVE_BOOK_MUTATION = gql`
-  mutation RemoveBook($bookId: String!) {
-    removeBook(bookId: $bookId) {
-      _id
-      username
-      email
-      bookCount
-      savedBooks {
-        ${bookFields}
-      }
+mutation Mutation($bookId: String!) {
+  removeBook(bookId: $bookId) {
+    savedBooks {
+      authors
+      description
+      bookId
+      image
+      link
+      title
     }
   }
+}
 `;

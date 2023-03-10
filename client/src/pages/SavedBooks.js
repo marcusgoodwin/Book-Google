@@ -1,39 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Button, Row, Col } from 'react-bootstrap';
-import { getMe, deleteBook } from '../utils/API';
 import Auth from '../utils/auth';
+import { useQuery, useMutation } from '@apollo/react-hooks';
 import { removeBookId } from '../utils/localStorage';
+import { GET_ME } from '../utils/queries';
+import { REMOVE_BOOK_MUTATION } from '../utils/mutations';
+
 
 const SavedBooks = () => {
-  const [userData, setUserData] = useState({});
   const [loading, setLoading] = useState(true);
 
+  const [
+    deleteBook, {error}
+  ] = useMutation(REMOVE_BOOK_MUTATION)
+
+  const {data} = useQuery(GET_ME);
+  const [userData, setUserData] = useState({});
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = Auth.getToken();
-
-        if (!token) {
-          return setLoading(false);
-        }
-
-        const response = await getMe(token);
-
-        if (!response.ok) {
-          throw new Error('Something went wrong!');
-        }
-
-        const data = await response.json();
-        setUserData(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+    if (data) {
+      setUserData(data.me);
+      setLoading(false);
+    }
+  }, [data]);
 
   const handleDeleteBook = async (bookId) => {
     try {
@@ -43,15 +31,10 @@ const SavedBooks = () => {
         throw new Error('No token found!');
       }
 
-      const response = await deleteBook(bookId, token);
+      const response = await deleteBook({variables: {bookId}});
 
-      if (!response.ok) {
-        throw new Error('Something went wrong!');
-      }
+      window.location.reload();
 
-      const data = await response.json();
-      setUserData(data);
-      removeBookId(bookId);
     } catch (err) {
       console.error(err);
     }
@@ -78,9 +61,10 @@ const SavedBooks = () => {
         </h2>
         <Row>
           {userData.savedBooks?.map((book) => (
-            <Col md='4' key={book.bookId}>
+            <Col md='4' key={book?.bookId || 'nothing'}>
+              {console.log(book)}
               <Card border='dark'>
-                {book.image && (
+                {book?.image && (
                   <Card.Img
                     src={book.image}
                     alt={`The cover for ${book.title}`}
@@ -88,12 +72,12 @@ const SavedBooks = () => {
                   />
                 )}
                 <Card.Body>
-                  <Card.Title>{book.title}</Card.Title>
-                  <p className='small'>Authors: {book.authors}</p>
-                  <Card.Text>{book.description}</Card.Text>
+                  <Card.Title>{book?.title}</Card.Title>
+                  <p className='small'>Authors: {book?.authors}</p>
+                  <Card.Text>{book?.description}</Card.Text>
                   <Button
                     className='btn-block btn-danger'
-                    onClick={() => handleDeleteBook(book.bookId)}
+                    onClick={() => handleDeleteBook(book?.bookId)}
                   >
                     Delete this Book!
                   </Button>

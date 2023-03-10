@@ -42,17 +42,20 @@ const resolvers = {
       return { token, user: foundUser };
     },
 
-    saveBook: async (_, { input }, { user }) => {
+    saveBook: async (_, args, { user }) => {
+      if (!args.description) {
+        args.description = "N/A";
+      }
       if (!user) {
         throw new AuthenticationError("You need to be logged in!");
       }
-
+console.log(args);
       const updatedUser = await User.findByIdAndUpdate(
         user._id,
-        { $addToSet: { savedBooks: input } },
+        { $addToSet: { savedBooks: args } },
         { new: true, runValidators: true }
       );
-
+console.log(updatedUser);
       return updatedUser;
     },
 
